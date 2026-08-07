@@ -9,7 +9,7 @@ if __name__ == "__main__":
 ''' 
     comandos úteis no desenvolvimento:
 
-    tree . -I "public|node_modules|venv|__pycache__"
+    tree . -I "public|node_modules|venv|__pycache__|target"
 
     http://localhost:8000/nome_serviço_desejado
 
