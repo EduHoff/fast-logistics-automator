@@ -4,4 +4,6 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+dotenvy = "0.15.7"
 rocket = "0.5.1"
+sqlx = { version = "0.9.0", features = ["runtime-tokio", "postgres", "chrono", "uuid"] }
