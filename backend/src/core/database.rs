@@ -14,3 +14,21 @@ pub async fn init_postgres_pool() -> PgPool {
         .await
         .expect("Failed to connect to the database")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_postgres_connection() {
+        let pool = init_postgres_pool().await;
+
+        let result = sqlx::query("SELECT 1 as test_val").fetch_one(&pool).await;
+
+        assert!(
+            result.is_ok(),
+            "Failed to execute test query on PostgreSQL database: {:?}",
+            result.err()
+        );
+    }
+}

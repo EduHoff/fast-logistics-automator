@@ -1,3 +1,6 @@
+use core::fmt;
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -93,6 +96,77 @@ impl Uf {
             Uf::SP => "São Paulo",
             Uf::SE => "Sergipe",
             Uf::TO => "Tocantins",
+        }
+    }
+}
+
+impl FromStr for Uf {
+    type Err = ();
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.trim().to_uppercase().as_str() {
+            "AC" => Ok(Uf::AC),
+            "AL" => Ok(Uf::AL),
+            "AP" => Ok(Uf::AP),
+            "AM" => Ok(Uf::AM),
+            "BA" => Ok(Uf::BA),
+            "CE" => Ok(Uf::CE),
+            "DF" => Ok(Uf::DF),
+            "ES" => Ok(Uf::ES),
+            "GO" => Ok(Uf::GO),
+            "MA" => Ok(Uf::MA),
+            "MT" => Ok(Uf::MT),
+            "MS" => Ok(Uf::MS),
+            "MG" => Ok(Uf::MG),
+            "PA" => Ok(Uf::PA),
+            "PB" => Ok(Uf::PB),
+            "PR" => Ok(Uf::PR),
+            "PE" => Ok(Uf::PE),
+            "PI" => Ok(Uf::PI),
+            "RJ" => Ok(Uf::RJ),
+            "RN" => Ok(Uf::RN),
+            "RS" => Ok(Uf::RS),
+            "RO" => Ok(Uf::RO),
+            "RR" => Ok(Uf::RR),
+            "SC" => Ok(Uf::SC),
+            "SP" => Ok(Uf::SP),
+            "SE" => Ok(Uf::SE),
+            "TO" => Ok(Uf::TO),
+            _ => Err(()),
+        }
+    }
+}
+
+impl std::fmt::Display for Uf {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        match self {
+            Uf::AC => write!(f, "AC"),
+            Uf::AL => write!(f, "AL"),
+            Uf::AP => write!(f, "AP"),
+            Uf::AM => write!(f, "AM"),
+            Uf::BA => write!(f, "BA"),
+            Uf::CE => write!(f, "CE"),
+            Uf::DF => write!(f, "DF"),
+            Uf::ES => write!(f, "ES"),
+            Uf::GO => write!(f, "GO"),
+            Uf::MA => write!(f, "MA"),
+            Uf::MT => write!(f, "MT"),
+            Uf::MS => write!(f, "MS"),
+            Uf::MG => write!(f, "MG"),
+            Uf::PA => write!(f, "PA"),
+            Uf::PB => write!(f, "PB"),
+            Uf::PR => write!(f, "PR"),
+            Uf::PE => write!(f, "PE"),
+            Uf::PI => write!(f, "PI"),
+            Uf::RJ => write!(f, "RJ"),
+            Uf::RN => write!(f, "RN"),
+            Uf::RS => write!(f, "RS"),
+            Uf::RO => write!(f, "RO"),
+            Uf::RR => write!(f, "RR"),
+            Uf::SC => write!(f, "SC"),
+            Uf::SP => write!(f, "SP"),
+            Uf::SE => write!(f, "SE"),
+            Uf::TO => write!(f, "TO"),
         }
     }
 }

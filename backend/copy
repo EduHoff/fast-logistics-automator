@@ -1,0 +1,174 @@
+   Compiling backend v0.1.0 (/home/eduhoff/Documents/Software/codigos/atividades_UniSenai/fast-logistics-automator/backend)
+error[E0432]: unresolved import `crate::domain::enums::uf::UF`
+ --> src/infra/scanner/json_scanner.rs:6:48
+  |
+6 | use crate::domain::enums::{category::Category, uf::UF, unit_type::UnitType};
+  |                                                ^^^^^^ no `UF` in `domain::enums::uf`
+  |
+help: a similar name exists in the module (notice the capitalization)
+  |
+6 - use crate::domain::enums::{category::Category, uf::UF, unit_type::UnitType};
+6 + use crate::domain::enums::{category::Category, uf::Uf, unit_type::UnitType};
+  |
+
+error[E0432]: unresolved import `crate::domain::enums::uf::UF`
+ --> src/infra/scanner/pdf_scanner.rs:6:48
+  |
+6 | use crate::domain::enums::{category::Category, uf::UF, unit_type::UnitType};
+  |                                                ^^^^^^ no `UF` in `domain::enums::uf`
+  |
+help: a similar name exists in the module (notice the capitalization)
+  |
+6 - use crate::domain::enums::{category::Category, uf::UF, unit_type::UnitType};
+6 + use crate::domain::enums::{category::Category, uf::Uf, unit_type::UnitType};
+  |
+
+error[E0061]: this function takes 7 arguments but 6 arguments were supplied
+  --> src/infra/scanner/json_scanner.rs:43:25
+   |
+43 |           let mut order = PurchaseOrder::new(
+   |  _________________________^^^^^^^^^^^^^^^^^^-
+44 | |             raw_order.order_number.unwrap_or_else(|| "N/A".to_string()),
+45 | |             raw_order
+46 | |                 .customer_name
+...  |
+53 | |             raw_order.total_volume_m3.unwrap_or(0.0),
+54 | |         );
+   | |_________- argument #7 of type `f64` is missing
+   |
+note: associated function defined here
+  --> src/domain/entities/purchase_order.rs:22:12
+   |
+22 |     pub fn new(
+   |            ^^^
+...
+29 |         total_freight: f64,
+   |         ------------------
+help: provide the argument
+   |
+43 |         let mut order = PurchaseOrder::new(
+...
+53 |             raw_order.total_volume_m3.unwrap_or(0.0),
+54 ~             /* f64 */,
+55 ~         );
+   |
+
+error[E0599]: no variant, associated function, or constant named `from_code_prefix` found for enum `category::Category` in the current scope
+  --> src/infra/scanner/json_scanner.rs:59:42
+   |
+59 |                 let category = Category::from_code_prefix(&code);
+   |                                          ^^^^^^^^^^^^^^^^ variant, associated function, or constant not found in `category::Category`
+   |
+  ::: src/domain/enums/category.rs:7:1
+   |
+ 7 | pub enum Category {
+   | ----------------- variant, associated function, or constant `from_code_prefix` not found for this enum
+
+error[E0599]: no variant, associated function, or constant named `from_str` found for enum `UnitType` in the current scope
+  --> src/infra/scanner/json_scanner.rs:64:45
+   |
+64 |                     .and_then(|u| UnitType::from_str(u).ok())
+   |                                             ^^^^^^^^ variant, associated function, or constant not found in `UnitType`
+   |
+  ::: src/domain/enums/unit_type.rs:6:1
+   |
+ 6 | pub enum UnitType {
+   | ----------------- variant, associated function, or constant `from_str` not found for this enum
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following traits define an item `from_str`, perhaps you need to implement one of them:
+           candidate #1: `FromStr`
+           candidate #2: `rocket::figment::providers::Format`
+help: there is an associated function `from` with a similar name
+   |
+64 -                     .and_then(|u| UnitType::from_str(u).ok())
+64 +                     .and_then(|u| UnitType::from(u).ok())
+   |
+
+error[E0061]: this function takes 7 arguments but 6 arguments were supplied
+  --> src/infra/scanner/pdf_scanner.rs:40:25
+   |
+40 |           let mut order = PurchaseOrder::new(
+   |  _________________________^^^^^^^^^^^^^^^^^^-
+41 | |             order_num,
+42 | |             customer,
+43 | |             city,
+...  |
+46 | |             0.0,
+47 | |         );
+   | |_________- argument #7 of type `f64` is missing
+   |
+note: associated function defined here
+  --> src/domain/entities/purchase_order.rs:22:12
+   |
+22 |     pub fn new(
+   |            ^^^
+...
+29 |         total_freight: f64,
+   |         ------------------
+help: provide the argument
+   |
+40 |         let mut order = PurchaseOrder::new(
+...
+46 |             0.0,
+47 ~             /* f64 */,
+48 ~         );
+   |
+
+error[E0308]: mismatched types
+  --> src/infra/scanner/pdf_scanner.rs:56:55
+   |
+56 |             let qty_str = caps.get(4).map_or("0", |m| m.as_str().replace('.', ""));
+   |                                                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^ expected `&str`, found `String`
+   |
+help: consider borrowing here
+   |
+56 |             let qty_str = caps.get(4).map_or("0", |m| &m.as_str().replace('.', ""));
+   |                                                       +
+
+error[E0599]: no variant, associated function, or constant named `from_code_prefix` found for enum `category::Category` in the current scope
+  --> src/infra/scanner/pdf_scanner.rs:60:38
+   |
+60 |             let category = Category::from_code_prefix(code);
+   |                                      ^^^^^^^^^^^^^^^^ variant, associated function, or constant not found in `category::Category`
+   |
+  ::: src/domain/enums/category.rs:7:1
+   |
+ 7 | pub enum Category {
+   | ----------------- variant, associated function, or constant `from_code_prefix` not found for this enum
+
+error[E0599]: no variant, associated function, or constant named `from_str` found for enum `UnitType` in the current scope
+  --> src/infra/scanner/pdf_scanner.rs:61:34
+   |
+61 |             let unit = UnitType::from_str(unit_str).unwrap_or(UnitType::PC);
+   |                                  ^^^^^^^^ variant, associated function, or constant not found in `UnitType`
+   |
+  ::: src/domain/enums/unit_type.rs:6:1
+   |
+ 6 | pub enum UnitType {
+   | ----------------- variant, associated function, or constant `from_str` not found for this enum
+   |
+   = help: items from traits can only be used if the trait is implemented and in scope
+   = note: the following traits define an item `from_str`, perhaps you need to implement one of them:
+           candidate #1: `FromStr`
+           candidate #2: `rocket::figment::providers::Format`
+help: there is an associated function `from` with a similar name
+   |
+61 -             let unit = UnitType::from_str(unit_str).unwrap_or(UnitType::PC);
+61 +             let unit = UnitType::from(unit_str).unwrap_or(UnitType::PC);
+   |
+
+error[E0308]: mismatched types
+  --> src/infra/scanner/pdf_scanner.rs:66:17
+   |
+66 |                 quantity,
+   |                 ^^^^^^^^ expected `u32`, found `usize`
+   |
+help: you can convert a `usize` to a `u32` and panic if the converted value doesn't fit
+   |
+66 |                 quantity: quantity.try_into().unwrap(),
+   |                 +++++++++         ++++++++++++++++++++
+
+Some errors have detailed explanations: E0061, E0308, E0432, E0599.
+For more information about an error, try `rustc --explain E0061`.
+error: could not compile `backend` (lib) due to 10 previous errors
