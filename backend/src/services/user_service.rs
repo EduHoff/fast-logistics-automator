@@ -1,6 +1,5 @@
-use crate::core::security::Security;
-use crate::domain::entities::user::User;
 use crate::domain::enums::user_role::UserRole;
+use crate::{core::security::hash_password, domain::entities::user::User};
 use sqlx::{PgPool, Row};
 use uuid::Uuid;
 
@@ -20,7 +19,7 @@ impl UserService {
         raw_pwd: &str,
         role: UserRole,
     ) -> Result<User, String> {
-        let hashed_password = Security::hash_password(raw_pwd)?;
+        let hashed_password = hash_password(raw_pwd)?;
         let role_str = role.to_string();
         let user_id = Uuid::new_v4();
 
