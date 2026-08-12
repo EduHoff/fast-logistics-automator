@@ -1,4 +1,5 @@
 use backend::api;
+use dotenvy::{dotenv, from_filename};
 use sqlx::postgres::PgPoolOptions;
 
 #[macro_use]
@@ -6,7 +7,9 @@ extern crate rocket;
 
 #[launch]
 async fn rocket() -> _ {
-    dotenvy::dotenv().ok();
+    if dotenv().is_err() {
+        let _ = from_filename("../.env");
+    }
 
     let database_url =
         std::env::var("DATABASE_URL").expect("DATABASE_URL must be set in the .env file");

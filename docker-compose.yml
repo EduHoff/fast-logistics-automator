@@ -1,13 +1,20 @@
+version: '3.8'
+
 services:
   backend:
     build: ./backend
     container_name: backend
     env_file:
       - .env
+    environment:
+      - ROCKET_ADDRESS=0.0.0.0
+      - ROCKET_PORT=8000
+      - DATABASE_URL=${DATABASE_URL}
     ports:
       - "8000:8000"
     volumes:
       - ./backend:/app
+      - /app/target
     networks:
       - app-network
 
@@ -29,6 +36,9 @@ services:
       - backend
     networks:
       - app-network
+
+volumes:
+  backend_target:
 
 networks:
   app-network:

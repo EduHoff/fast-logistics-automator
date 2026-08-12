@@ -39,7 +39,7 @@ pub async fn calculate_volume(
         order.add_vehicle(Vehicle::new(60.0, VehicleType::Carreta, num_carretas));
         remaining_volume %= 60.0;
     }
-    
+
     if remaining_volume > 0.0 {
         let num_trucks = (remaining_volume / 45.0).ceil().to_u32().unwrap_or(0);
         order.add_vehicle(Vehicle::new(45.0, VehicleType::Truck, num_trucks));
@@ -57,7 +57,6 @@ pub async fn final_quote(
     let order = quote_request.into_inner();
     let service = LogisticsService::new(pool.inner().clone());
 
-    // Passa a referência do PgPool e usa .await antes de tratar o erro
     let result = service
         .calculate_final_quote(pool.inner(), order)
         .await

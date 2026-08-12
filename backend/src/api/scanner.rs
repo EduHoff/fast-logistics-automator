@@ -27,7 +27,11 @@ pub async fn scan(
         .map(ToString::to_string)
         .unwrap_or_default();
 
-    let extension = file_name.split('.').next_back().unwrap_or("").to_lowercase();
+    let extension = file_name
+        .split('.')
+        .next_back()
+        .unwrap_or("")
+        .to_lowercase();
 
     let temp_path = data.file.path().ok_or((
         Status::InternalServerError,

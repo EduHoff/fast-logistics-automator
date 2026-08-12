@@ -1,4 +1,4 @@
-use sqlx::{PgPool, Postgres, Row, Transaction};
+use sqlx::{PgPool, Postgres, Row, Transaction, query};
 use uuid::Uuid;
 
 use crate::domain::entities::purchase_order::PurchaseOrder;
@@ -18,7 +18,7 @@ impl OrderRepository {
         let created_by_uuid =
             Uuid::parse_str(&order.created_by_id).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
 
-        let row = sqlx::query(
+        let row = query(
             r"
             INSERT INTO pedidos (
                 usuario_id, numero_oc, cliente_nome, cidade_nome, uf,
@@ -42,7 +42,7 @@ impl OrderRepository {
         let order_id: Uuid = row.get("id");
 
         for item in &order.items {
-            sqlx::query(
+            query(
                 r"
                 INSERT INTO pedido_itens (
                     pedido_id, codigo_produto, descricao, quantidade,

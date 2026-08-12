@@ -1,4 +1,4 @@
-use sqlx::{FromRow, PgPool};
+use sqlx::{FromRow, PgPool, query_as};
 
 #[derive(Debug, FromRow)]
 pub struct DryLineCatalog {
@@ -36,7 +36,7 @@ impl ProductRepository {
         product_descriptions: &[String],
         product_codes: &[String],
     ) -> Result<(Vec<DryLineCatalog>, Vec<RefrigeratedCatalog>), sqlx::Error> {
-        let dry_line = sqlx::query_as::<_, DryLineCatalog>(
+        let dry_line = query_as::<_, DryLineCatalog>(
             r"
             SELECT nome, qtd_por_m3, categoria
             FROM catalogo_linha_seca
@@ -47,7 +47,7 @@ impl ProductRepository {
         .fetch_all(&self.pool)
         .await?;
 
-        let refrigerated = sqlx::query_as::<_, RefrigeratedCatalog>(
+        let refrigerated = query_as::<_, RefrigeratedCatalog>(
             r"
             SELECT codigo_atual, codigo_antigo, comprimento, largura, altura
             FROM catalogo_refrigerados
@@ -62,7 +62,7 @@ impl ProductRepository {
     }
 
     pub async fn get_adjustment_factors(&self) -> Result<Vec<AdjustmentFactor>, sqlx::Error> {
-        let factors = sqlx::query_as::<_, AdjustmentFactor>(
+        let factors = query_as::<_, AdjustmentFactor>(
             r"
             SELECT categoria, fator
             FROM fatores_reajuste_linha_seca
