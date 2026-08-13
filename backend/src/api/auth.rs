@@ -87,7 +87,7 @@ pub async fn login(
 
     let role_str = format!("{:?}", user.role);
 
-    let token = create_access_token(&user.name, &user.email, &role_str)
+    let token = create_access_token(&user.id.to_string(), &user.email, &role_str)
         .map_err(|e| (Status::InternalServerError, e))?;
 
     user_service
