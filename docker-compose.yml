@@ -10,6 +10,7 @@ services:
       - ROCKET_ADDRESS=0.0.0.0
       - ROCKET_PORT=8000
       - DATABASE_URL=${DATABASE_URL}
+      - SECRET_TOKEN_KEY=${SECRET_TOKEN_KEY}
     ports:
       - "8000:8000"
     volumes:

@@ -10,8 +10,8 @@ use std::env;
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Claims {
     pub sub: String,
-    pub email: String,
     pub role: String,
+    pub id: String,
     pub exp: i64,
 }
 
@@ -45,9 +45,9 @@ pub fn create_access_token(user_id: &str, email: &str, role: &str) -> Result<Str
         .timestamp();
 
     let claims = Claims {
-        sub: user_id.to_string(),
-        email: email.to_string(),
+        sub: email.to_string(),
         role: role.to_string(),
+        id: user_id.to_string(),
         exp: expiration,
     };
 

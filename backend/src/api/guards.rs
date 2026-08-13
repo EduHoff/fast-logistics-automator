@@ -21,7 +21,7 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
 
                 match crate::core::security::decode_access_token(token) {
                     Ok(claims) => {
-                        let Ok(user_id) = Uuid::parse_str(&claims.sub) else {
+                        let Ok(user_id) = Uuid::parse_str(&claims.id) else {
                             return Outcome::Error((
                                 Status::Unauthorized,
                                 "Invalid user ID format in token",
@@ -30,7 +30,7 @@ impl<'r> FromRequest<'r> for AuthenticatedUser {
 
                         Outcome::Success(AuthenticatedUser {
                             id: user_id,
-                            email: claims.email,
+                            email: claims.sub,
                             role: claims.role,
                         })
                     }
