@@ -45,7 +45,7 @@ export class Routes {
 
   static async uploadOrder(file: File): Promise<PurchaseOrder> {
     const formData = new FormData();
-    formData.append("file", file);
+    formData.append("file", file, file.name);
 
     const response = await fetch(`${API_URL}/scan`, {
       method: "POST",

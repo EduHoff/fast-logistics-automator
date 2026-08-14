@@ -15,46 +15,54 @@ pub struct UploadData<'r> {
     pub file: TempFile<'r>,
 }
 
-#[post("/", data = "<data>")]
+#[post("/", format = "multipart/form-data", data = "<data>")]
 pub async fn scan(
-    user: AuthenticatedUser,
     data: Form<UploadData<'_>>,
+    user: AuthenticatedUser,
 ) -> Result<Json<PurchaseOrder>, (Status, String)> {
-    let file_name = data
+    let original_filename = data
         .file
         .raw_name()
         .and_then(|n| n.as_str())
-        .map(ToString::to_string)
         .unwrap_or_default();
 
-    let extension = file_name
+
+    let mut extension = original_filename
         .split('.')
         .next_back()
         .unwrap_or("")
         .to_lowercase();
 
+ 
+    if extension == original_filename.to_lowercase() || extension.is_empty() {
+            match data.file.content_type() {
+                Some(ct) if ct.is_pdf() => extension = "pdf".to_string(),
+                Some(ct) if ct.is_json() => extension = "json".to_string(),
+                _ => {}
+            }
+        }
+
+
     let temp_path = data.file.path().ok_or((
         Status::InternalServerError,
-        "Failed to process uploaded file".to_string(),
+        "Failed to access uploaded file path".to_string(),
     ))?;
 
     let content = tokio::fs::read(temp_path)
         .await
-        .map_err(|e| (Status::BadRequest, e.to_string()))?;
+        .map_err(|e| (Status::BadRequest, format!("Failed to read uploaded file: {e}")))?;
 
     let user_id_str = user.id.to_string();
 
     let result: PurchaseOrder = match extension.as_str() {
         "pdf" => {
             let scanner = PDFScanner;
-
             scanner
                 .scan(&content, &user_id_str)
                 .map_err(|e| (Status::BadRequest, e))?
         }
         "json" => {
             let scanner = JSONScanner;
-
             scanner
                 .scan(&content, &user_id_str)
                 .map_err(|e| (Status::BadRequest, e))?
@@ -62,7 +70,7 @@ pub async fn scan(
         _ => {
             return Err((
                 Status::UnsupportedMediaType,
-                format!("Extension .{extension} is not supported. Please upload PDF or JSON."),
+                format!("Extension '.{extension}' is not supported. Please upload PDF or JSON."),
             ));
         }
     };
