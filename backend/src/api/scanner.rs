@@ -26,31 +26,31 @@ pub async fn scan(
         .and_then(|n| n.as_str())
         .unwrap_or_default();
 
-
     let mut extension = original_filename
         .split('.')
         .next_back()
         .unwrap_or("")
         .to_lowercase();
 
- 
     if extension == original_filename.to_lowercase() || extension.is_empty() {
-            match data.file.content_type() {
-                Some(ct) if ct.is_pdf() => extension = "pdf".to_string(),
-                Some(ct) if ct.is_json() => extension = "json".to_string(),
-                _ => {}
-            }
+        match data.file.content_type() {
+            Some(ct) if ct.is_pdf() => extension = "pdf".to_string(),
+            Some(ct) if ct.is_json() => extension = "json".to_string(),
+            _ => {}
         }
-
+    }
 
     let temp_path = data.file.path().ok_or((
         Status::InternalServerError,
         "Failed to access uploaded file path".to_string(),
     ))?;
 
-    let content = tokio::fs::read(temp_path)
-        .await
-        .map_err(|e| (Status::BadRequest, format!("Failed to read uploaded file: {e}")))?;
+    let content = tokio::fs::read(temp_path).await.map_err(|e| {
+        (
+            Status::BadRequest,
+            format!("Failed to read uploaded file: {e}"),
+        )
+    })?;
 
     let user_id_str = user.id.to_string();
 
