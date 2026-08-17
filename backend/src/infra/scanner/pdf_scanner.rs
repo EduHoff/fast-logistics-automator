@@ -13,21 +13,41 @@ impl Scanner for PDFScanner {
             .map_err(|err| format!("Failed to extract PDF text: {err}"))?;
 
         let order_re = Regex::new(r"OC-\d{4}-\d+").map_err(|e| e.to_string())?;
-        let customer_re = Regex::new(r"Destinatário:\n(.+)").map_err(|e| e.to_string())?;
-        let city_uf_re =
-            Regex::new(r"Cidade\s*/\s*UF:\n(.+?)\s*/\s*([A-Z]{2})").map_err(|e| e.to_string())?;
-
         let order_num = order_re
             .find(&raw_text)
             .map_or_else(|| "N/A".to_string(), |m| m.as_str().to_string());
 
-        let customer = customer_re
-            .captures(&raw_text)
-            .and_then(|caps| caps.get(1))
-            .map_or_else(
-                || "Desconhecido".to_string(),
-                |m| m.as_str().trim().to_string(),
-            );
+        let customer_re = Regex::new(r"(?i)Destinatário:\s*([^\r\n]+(?:\r?\n[^\r\n]+)?)")
+            .map_err(|e| e.to_string())?;
+
+        let customer = if let Some(caps) = customer_re.captures(&raw_text) {
+            let full_match = caps.get(1).map_or("", |m| m.as_str());
+
+            let clean_line = full_match
+                .lines()
+                .take_while(|line| !line.to_lowercase().contains("endereço:"))
+                .collect::<Vec<&str>>()
+                .join(" ");
+
+            clean_line
+                .split_whitespace()
+                .collect::<Vec<&str>>()
+                .join(" ")
+        } else {
+            let fallback_re =
+                Regex::new(r"(?m)^(SUPERMERCADOS\s+[A-Z\s]+LTDA\.)").map_err(|e| e.to_string())?;
+
+            fallback_re
+                .captures(&raw_text)
+                .and_then(|caps| caps.get(1))
+                .map_or_else(
+                    || "Desconhecido".to_string(),
+                    |m| m.as_str().trim().to_string(),
+                )
+        };
+
+        let city_uf_re = Regex::new(r"(?i)Cidade\s*/\s*UF:\s*(.+?)\s*/\s*([A-Z]{2})")
+            .map_err(|e| e.to_string())?;
 
         let (city, uf_enum) = if let Some(caps) = city_uf_re.captures(&raw_text) {
             let city_str = caps.get(1).map_or("Não informada", |m| m.as_str().trim());
@@ -49,7 +69,7 @@ impl Scanner for PDFScanner {
         );
 
         let item_pattern =
-            Regex::new(r"(\d{2})\n([A-Z]{3}-\d{3})\n(.+?)\n\s*(\d+(?:\.?\d*))\n\s*([A-Z]{2})")
+            Regex::new(r"(?m)^(\d{2})\s+([A-Z]{3}-\d{3})\s+(.+?)\s+(\d+(?:\.\d+)?)\s+([A-Z]{2})$")
                 .map_err(|e| e.to_string())?;
 
         for caps in item_pattern.captures_iter(&raw_text) {
