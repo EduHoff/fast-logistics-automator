@@ -97,7 +97,7 @@ impl LogisticsService {
         mut order: PurchaseOrder,
     ) -> Result<PurchaseOrder, String> {
         let city_row = sqlx::query(
-            "SELECT frete_base_carreta, pedagio_carreta, frete_base_truck, pedagio_truck FROM cidades WHERE nome ILIKE $1 LIMIT 1",
+            "SELECT frete_base_carreta::float8, pedagio_carreta::float8, frete_base_truck::float8, pedagio_truck::float8 FROM cidades WHERE nome ILIKE $1 LIMIT 1",
         )
         .bind(order.city.trim())
         .fetch_optional(pool)
@@ -115,7 +115,7 @@ impl LogisticsService {
         let commercial_margin = 1.20;
 
         let icms_row =
-            sqlx::query("SELECT aliquota_icms FROM regras_impostos WHERE uf = $1 LIMIT 1")
+            sqlx::query("SELECT aliquota_icms::float8 FROM regras_impostos WHERE uf = $1 LIMIT 1")
                 .bind(order.uf.to_string())
                 .fetch_optional(pool)
                 .await
@@ -124,7 +124,7 @@ impl LogisticsService {
         let icms: f64 = icms_row.map_or(18.0, |r| r.get::<f64, _>("aliquota_icms"));
 
         let customer_row =
-            sqlx::query("SELECT fator FROM fatores_descarga WHERE nome = $1 LIMIT 1")
+            sqlx::query("SELECT fator::float8 FROM fatores_descarga WHERE nome = $1 LIMIT 1")
                 .bind(&order.customer_name)
                 .fetch_optional(pool)
                 .await
@@ -133,11 +133,12 @@ impl LogisticsService {
         let discharge_factor: f64 = if let Some(r) = customer_row {
             r.get("fator")
         } else {
-            let other_row =
-                sqlx::query("SELECT fator FROM fatores_descarga WHERE nome = 'OUTROS' LIMIT 1")
-                    .fetch_one(pool)
-                    .await
-                    .map_err(|e| e.to_string())?;
+            let other_row = sqlx::query(
+                "SELECT fator::float8 FROM fatores_descarga WHERE nome = 'OUTROS' LIMIT 1",
+            )
+            .fetch_one(pool)
+            .await
+            .map_err(|e| e.to_string())?;
             other_row.get("fator")
         };
 

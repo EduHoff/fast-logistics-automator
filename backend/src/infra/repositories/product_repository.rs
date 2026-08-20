@@ -38,7 +38,7 @@ impl ProductRepository {
     ) -> Result<(Vec<DryLineCatalog>, Vec<RefrigeratedCatalog>), sqlx::Error> {
         let dry_line = query_as::<_, DryLineCatalog>(
             r"
-            SELECT nome, qtd_por_m3, categoria
+            SELECT nome, qtd_por_m3::float8, categoria
             FROM catalogo_linha_seca
             WHERE nome = ANY($1)
             ",
@@ -49,7 +49,7 @@ impl ProductRepository {
 
         let refrigerated = query_as::<_, RefrigeratedCatalog>(
             r"
-            SELECT codigo_atual, codigo_antigo, comprimento, largura, altura
+            SELECT codigo_atual, codigo_antigo, comprimento::float8, largura::float8, altura::float8
             FROM catalogo_refrigerados
             WHERE codigo_atual = ANY($1) OR codigo_antigo = ANY($1)
             ",
@@ -64,7 +64,7 @@ impl ProductRepository {
     pub async fn get_adjustment_factors(&self) -> Result<Vec<AdjustmentFactor>, sqlx::Error> {
         let factors = query_as::<_, AdjustmentFactor>(
             r"
-            SELECT categoria, fator
+            SELECT categoria, fator::float8
             FROM fatores_reajuste_linha_seca
             ",
         )
