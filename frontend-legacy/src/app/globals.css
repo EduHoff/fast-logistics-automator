@@ -1,0 +1,24 @@
+@import "tailwindcss";
+
+:root {
+  --primary: #3B82F6;
+  --primary-light: #EFF6FF;
+  --primary-soft: #93C5FD;
+
+  --background: #F9FAFB;
+  --card: #FFFFFF;
+  --border: #E5E7EB;
+  --text: #111827;
+  --text-light: #6B7280;
+}
+
+body {
+  background: var(--background);
+  color: var(--text);
+  font-family: Arial, sans-serif;
+}
+
+button:hover {
+  transform: scale(1.03);
+  opacity: 0.9;
+}

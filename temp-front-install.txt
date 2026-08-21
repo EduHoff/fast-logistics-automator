@@ -1,0 +1,14 @@
+npx create-next-app@latest frontend --typescript --tailwind --eslint --app --src-dir --import-alias "@/*"
+
+cd frontend
+
+npx shadcn@latest init -d
+
+npx shadcn@latest add card input table dialog dropdown-menu
+
+npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
+
+npm run dev
+
+npm run lint
+npx tsc --noEmit
