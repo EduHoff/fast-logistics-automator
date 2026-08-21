@@ -1,4 +1,5 @@
 use crate::domain::enums::{category::Category, unit_type::UnitType};
+use bigdecimal::BigDecimal;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -9,13 +10,13 @@ pub struct Product {
     pub unit: UnitType,
     pub category: Category,
     #[serde(default)]
-    pub items_per_m3: f64,
+    pub items_per_m3: BigDecimal,
     #[serde(default)]
-    pub length: f64,
+    pub length: BigDecimal,
     #[serde(default)]
-    pub width: f64,
+    pub width: BigDecimal,
     #[serde(default)]
-    pub height: f64,
+    pub height: BigDecimal,
 }
 
 impl Product {
@@ -25,10 +26,10 @@ impl Product {
         quantity: u32,
         unit: UnitType,
         category: Category,
-        items_per_m3: f64,
-        length: f64,
-        width: f64,
-        height: f64,
+        items_per_m3: BigDecimal,
+        length: BigDecimal,
+        width: BigDecimal,
+        height: BigDecimal,
     ) -> Self {
         Self {
             code,

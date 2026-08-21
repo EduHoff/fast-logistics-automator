@@ -23,7 +23,7 @@ mod tests {
     async fn test_postgres_connection() {
         let pool = init_postgres_pool().await;
 
-        let result = sqlx::query("SELECT 1 as test_val").fetch_one(&pool).await;
+        let result = sqlx::query!("SELECT 1 as test_val").fetch_one(&pool).await;
 
         assert!(
             result.is_ok(),

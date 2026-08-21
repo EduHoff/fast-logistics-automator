@@ -31,8 +31,8 @@ pub async fn calculate_volume(
         .await
         .map_err(|e| (Status::InternalServerError, e))?;
 
-    order.total_volume_m3 = total_volume;
-    let mut remaining_volume = total_volume;
+    order.total_volume_m3 = total_volume.clone();
+    let mut remaining_volume: f64 = total_volume.to_f64().unwrap_or(0.0);
 
     if remaining_volume >= 60.0 {
         let num_carretas = (remaining_volume / 60.0).floor().to_u32().unwrap_or(0);

@@ -1,3 +1,5 @@
+use bigdecimal::BigDecimal;
+use num_traits::Zero;
 use serde::Deserialize;
 use std::str::FromStr;
 
@@ -11,10 +13,10 @@ struct RawJsonItem {
     description: Option<String>,
     quantity: Option<i64>,
     unit: Option<String>,
-    length: Option<f64>,
-    width: Option<f64>,
-    height: Option<f64>,
-    items_per_m3: Option<f64>,
+    length: Option<BigDecimal>,
+    width: Option<BigDecimal>,
+    height: Option<BigDecimal>,
+    items_per_m3: Option<BigDecimal>,
 }
 
 #[derive(Deserialize)]
@@ -23,7 +25,7 @@ struct RawJsonOrder {
     customer_name: Option<String>,
     city: Option<String>,
     uf: Option<String>,
-    total_volume_m3: Option<f64>,
+    total_volume_m3: Option<BigDecimal>,
     items: Option<Vec<RawJsonItem>>,
 }
 
@@ -50,8 +52,8 @@ impl Scanner for JSONScanner {
                 .unwrap_or_else(|| "Não informada".to_string()),
             uf_enum,
             created_by_id.to_string(),
-            raw_order.total_volume_m3.unwrap_or(0.0),
-            0.0,
+            raw_order.total_volume_m3.unwrap_or_else(BigDecimal::zero),
+            &BigDecimal::zero(),
         );
 
         if let Some(items) = raw_order.items {
@@ -76,10 +78,10 @@ impl Scanner for JSONScanner {
                     quantity,
                     unit,
                     category,
-                    length: item.length.unwrap_or(0.0),
-                    width: item.width.unwrap_or(0.0),
-                    height: item.height.unwrap_or(0.0),
-                    items_per_m3: item.items_per_m3.unwrap_or(0.0),
+                    length: item.length.unwrap_or_else(BigDecimal::zero),
+                    width: item.width.unwrap_or_else(BigDecimal::zero),
+                    height: item.height.unwrap_or_else(BigDecimal::zero),
+                    items_per_m3: item.items_per_m3.unwrap_or_else(BigDecimal::zero),
                 };
 
                 order.add_item(product);

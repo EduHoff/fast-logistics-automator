@@ -1,3 +1,5 @@
+use bigdecimal::BigDecimal;
+use num_traits::Zero;
 use regex::Regex;
 use std::str::FromStr;
 
@@ -64,8 +66,8 @@ impl Scanner for PDFScanner {
             city,
             uf_enum,
             created_by_id.to_string(),
-            0.0,
-            0.0,
+            BigDecimal::zero(),
+            &BigDecimal::zero(),
         );
 
         let item_pattern =
@@ -91,10 +93,10 @@ impl Scanner for PDFScanner {
                 quantity,
                 unit,
                 category,
-                length: 0.0,
-                width: 0.0,
-                height: 0.0,
-                items_per_m3: 0.0,
+                length: BigDecimal::zero(),
+                width: BigDecimal::zero(),
+                height: BigDecimal::zero(),
+                items_per_m3: BigDecimal::zero(),
             };
 
             order.add_item(product);

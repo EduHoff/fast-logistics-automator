@@ -1,4 +1,4 @@
-use sqlx::{PgPool, Postgres, Row, Transaction, query};
+use sqlx::{PgPool, Postgres, Transaction, query, query_scalar};
 use uuid::Uuid;
 
 use crate::domain::entities::purchase_order::PurchaseOrder;
@@ -18,49 +18,54 @@ impl OrderRepository {
         let created_by_uuid =
             Uuid::parse_str(&order.created_by_id).map_err(|e| sqlx::Error::Decode(Box::new(e)))?;
 
-        let row = query(
-            r"
+        let uf_str = order.uf.to_string();
+        let status = "confirmado";
+
+        let order_id = query_scalar!(
+            r#"
             INSERT INTO pedidos (
                 usuario_id, numero_oc, cliente_nome, cidade_nome, uf,
                 total_volume_m3, total_freite_calculado, status
             )
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
             RETURNING id
-            ",
+            "#,
+            created_by_uuid,
+            order.order_number,
+            order.customer_name,
+            order.city,
+            uf_str,
+            order.total_volume_m3,
+            order.total_freight,
+            status
         )
-        .bind(created_by_uuid)
-        .bind(&order.order_number)
-        .bind(&order.customer_name)
-        .bind(&order.city)
-        .bind(order.uf.to_string())
-        .bind(order.total_volume_m3)
-        .bind(order.total_freight)
-        .bind("confirmado")
         .fetch_one(&mut *tx)
         .await?;
 
-        let order_id: Uuid = row.get("id");
-
         for item in &order.items {
-            query(
-                r"
+            let quantity = i32::try_from(item.quantity).unwrap_or(i32::MAX);
+            let unit_str = item.unit.to_string();
+            let category_str = item.category.to_string();
+
+            query!(
+                r#"
                 INSERT INTO pedido_itens (
                     pedido_id, codigo_produto, descricao, quantidade,
                     unidade, categoria, itens_por_m3, comprimento, largura, altura
                 )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-                ",
+                "#,
+                order_id,
+                item.code,
+                item.description,
+                quantity,
+                unit_str,
+                category_str,
+                item.items_per_m3,
+                item.length,
+                item.width,
+                item.height
             )
-            .bind(order_id)
-            .bind(&item.code)
-            .bind(&item.description)
-            .bind(i32::try_from(item.quantity).unwrap_or(i32::MAX))
-            .bind(item.unit.to_string())
-            .bind(item.category.to_string())
-            .bind(item.items_per_m3)
-            .bind(item.length)
-            .bind(item.width)
-            .bind(item.height)
             .execute(&mut *tx)
             .await?;
         }

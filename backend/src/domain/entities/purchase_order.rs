@@ -1,5 +1,7 @@
 use crate::domain::entities::{product::Product, vehicle::Vehicle};
 use crate::domain::enums::uf::Uf;
+use bigdecimal::{BigDecimal, RoundingMode};
+use num_traits::{ToPrimitive, Zero};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
@@ -9,9 +11,9 @@ pub struct PurchaseOrder {
     pub city: String,
     pub uf: Uf,
     pub created_by_id: String,
-    pub total_volume_m3: f64,
+    pub total_volume_m3: BigDecimal,
     #[serde(default)]
-    pub total_freight: f64,
+    pub total_freight: BigDecimal,
     #[serde(default)]
     pub items: Vec<Product>,
     #[serde(default)]
@@ -25,8 +27,8 @@ impl PurchaseOrder {
         city: String,
         uf: Uf,
         created_by_id: String,
-        total_volume_m3: f64,
-        total_freight: f64,
+        total_volume_m3: BigDecimal,
+        total_freight: &BigDecimal,
     ) -> Self {
         Self {
             order_number,
@@ -35,7 +37,7 @@ impl PurchaseOrder {
             uf,
             created_by_id,
             total_volume_m3,
-            total_freight: (total_freight * 100.0).round() / 100.0,
+            total_freight: total_freight.with_scale_round(2, RoundingMode::HalfUp),
             items: Vec::new(),
             vehicles: Vec::new(),
         }
@@ -54,11 +56,14 @@ impl PurchaseOrder {
     }
 
     pub fn get_linear_meters(&self, capacity_ref: Option<f64>) -> f64 {
-        if self.total_volume_m3 == 0.0 {
+        if self.total_volume_m3.is_zero() {
             return 0.0;
         }
+
+        let volume_f64 = self.total_volume_m3.to_f64().unwrap_or(0.0);
         let cap = capacity_ref.unwrap_or(60.0);
-        (self.total_volume_m3 * 12.0) / cap
+
+        (volume_f64 * 12.0) / cap
     }
 
     pub fn get_meters_nvia(&self, capacity_ref: Option<f64>) -> f64 {

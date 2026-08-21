@@ -1,13 +1,13 @@
-use sqlx::{FromRow, PgPool, query_as};
+use sqlx::PgPool;
 
-#[derive(Debug, FromRow)]
+#[derive(Debug)]
 pub struct DryLineCatalog {
     pub nome: String,
     pub qtd_por_m3: Option<f64>,
     pub categoria: Option<String>,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug)]
 pub struct RefrigeratedCatalog {
     pub codigo_atual: Option<String>,
     pub codigo_antigo: Option<String>,
@@ -16,7 +16,7 @@ pub struct RefrigeratedCatalog {
     pub altura: Option<f64>,
 }
 
-#[derive(Debug, FromRow)]
+#[derive(Debug)]
 pub struct AdjustmentFactor {
     pub categoria: String,
     pub fator: f64,
@@ -36,25 +36,32 @@ impl ProductRepository {
         product_descriptions: &[String],
         product_codes: &[String],
     ) -> Result<(Vec<DryLineCatalog>, Vec<RefrigeratedCatalog>), sqlx::Error> {
-        let dry_line = query_as::<_, DryLineCatalog>(
-            r"
+        let dry_line = sqlx::query_as!(
+            DryLineCatalog,
+            r#"
             SELECT nome, qtd_por_m3::float8, categoria
             FROM catalogo_linha_seca
             WHERE nome = ANY($1)
-            ",
+            "#,
+            product_descriptions
         )
-        .bind(product_descriptions)
         .fetch_all(&self.pool)
         .await?;
 
-        let refrigerated = query_as::<_, RefrigeratedCatalog>(
-            r"
-            SELECT codigo_atual, codigo_antigo, comprimento::float8, largura::float8, altura::float8
+        let refrigerated = sqlx::query_as!(
+            RefrigeratedCatalog,
+            r#"
+            SELECT 
+                codigo_atual, 
+                codigo_antigo, 
+                comprimento::float8, 
+                largura::float8, 
+                altura::float8
             FROM catalogo_refrigerados
             WHERE codigo_atual = ANY($1) OR codigo_antigo = ANY($1)
-            ",
+            "#,
+            product_codes
         )
-        .bind(product_codes)
         .fetch_all(&self.pool)
         .await?;
 
@@ -62,11 +69,12 @@ impl ProductRepository {
     }
 
     pub async fn get_adjustment_factors(&self) -> Result<Vec<AdjustmentFactor>, sqlx::Error> {
-        let factors = query_as::<_, AdjustmentFactor>(
-            r"
-            SELECT categoria, fator::float8
+        let factors = sqlx::query_as!(
+            AdjustmentFactor,
+            r#"
+            SELECT categoria, fator::float8 as "fator!"
             FROM fatores_reajuste_linha_seca
-            ",
+            "#
         )
         .fetch_all(&self.pool)
         .await?;

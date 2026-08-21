@@ -3,8 +3,10 @@ use crate::domain::enums::category::Category;
 use crate::domain::enums::unit_type::UnitType;
 use crate::domain::enums::vehicle_type::VehicleType;
 use crate::infra::repositories::product_repository::ProductRepository;
-use sqlx::{PgPool, Row};
+use bigdecimal::{BigDecimal, One, RoundingMode, Zero};
+use sqlx::PgPool;
 use std::collections::HashMap;
+use std::str::FromStr;
 
 pub struct LogisticsService {
     product_repo: ProductRepository,
@@ -17,7 +19,10 @@ impl LogisticsService {
         }
     }
 
-    pub async fn calculate_total_volume(&self, order: &PurchaseOrder) -> Result<f64, String> {
+    pub async fn calculate_total_volume(
+        &self,
+        order: &PurchaseOrder,
+    ) -> Result<BigDecimal, String> {
         let descricoes: Vec<String> = order
             .items
             .iter()
@@ -87,8 +92,8 @@ impl LogisticsService {
             total_volume += volume_item;
         }
 
-        let rounded_volume = (total_volume * 1000.0).round() / 1000.0;
-        Ok(rounded_volume)
+        BigDecimal::from_str(&format!("{total_volume:.3}"))
+            .map_err(|e| format!("Error converting total_volume to BigDecimal: {e}"))
     }
 
     pub async fn calculate_final_quote(
@@ -96,69 +101,96 @@ impl LogisticsService {
         pool: &PgPool,
         mut order: PurchaseOrder,
     ) -> Result<PurchaseOrder, String> {
-        let city_row = sqlx::query(
-            "SELECT frete_base_carreta::float8, pedagio_carreta::float8, frete_base_truck::float8, pedagio_truck::float8 FROM cidades WHERE nome ILIKE $1 LIMIT 1",
+        let city_row = sqlx::query!(
+            r#"
+            SELECT 
+                frete_base_carreta AS "frete_base_carreta!",
+                pedagio_carreta AS "pedagio_carreta!",
+                frete_base_truck AS "frete_base_truck!",
+                pedagio_truck AS "pedagio_truck!"
+            FROM cidades 
+            WHERE nome ILIKE $1 
+            LIMIT 1
+            "#,
+            order.city.trim()
         )
-        .bind(order.city.trim())
         .fetch_optional(pool)
         .await
         .map_err(|e| e.to_string())?
-        .ok_or_else(|| format!("A cidade '{}' não está cadastrada na tabela de fretes base.", order.city))?;
+        .ok_or_else(|| {
+            format!(
+                "A cidade '{}' não está cadastrada na tabela de fretes base.",
+                order.city
+            )
+        })?;
 
-        let frete_base_carreta: f64 = city_row.get("frete_base_carreta");
-        let pedagio_carreta: f64 = city_row.get("pedagio_carreta");
-        let frete_base_truck: f64 = city_row.get("frete_base_truck");
-        let pedagio_truck: f64 = city_row.get("pedagio_truck");
+        let frete_base_carreta = city_row.frete_base_carreta;
+        let pedagio_carreta = city_row.pedagio_carreta;
+        let frete_base_truck = city_row.frete_base_truck;
+        let pedagio_truck = city_row.pedagio_truck;
 
-        let base_discharge = 250.0;
-        let ad_valorem = 0.0;
-        let commercial_margin = 1.20;
+        let base_discharge = BigDecimal::from(250);
+        let ad_valorem = BigDecimal::zero();
+        let commercial_margin = BigDecimal::from_str("1.20")
+            .map_err(|e| format!("Invalid commercial margin format: {e}"))?;
+        let default_icms = BigDecimal::from(18);
+        let pis_cofins_rate = BigDecimal::from_str("9.25")
+            .map_err(|e| format!("Invalid PIS/COFINS rate format: {e}"))?;
+        let one_hundred = BigDecimal::from(100);
 
-        let icms_row =
-            sqlx::query("SELECT aliquota_icms::float8 FROM regras_impostos WHERE uf = $1 LIMIT 1")
-                .bind(order.uf.to_string())
-                .fetch_optional(pool)
-                .await
-                .map_err(|e| e.to_string())?;
+        let uf_str = order.uf.to_string();
 
-        let icms: f64 = icms_row.map_or(18.0, |r| r.get::<f64, _>("aliquota_icms"));
+        let icms = sqlx::query_scalar!(
+            r#"SELECT aliquota_icms FROM regras_impostos WHERE uf = $1 LIMIT 1"#,
+            uf_str
+        )
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?
+        .unwrap_or(default_icms);
 
-        let customer_row =
-            sqlx::query("SELECT fator::float8 FROM fatores_descarga WHERE nome = $1 LIMIT 1")
-                .bind(&order.customer_name)
-                .fetch_optional(pool)
-                .await
-                .map_err(|e| e.to_string())?;
+        let customer_factor = sqlx::query_scalar!(
+            r#"SELECT fator FROM fatores_descarga WHERE nome = $1 LIMIT 1"#,
+            order.customer_name
+        )
+        .fetch_optional(pool)
+        .await
+        .map_err(|e| e.to_string())?;
 
-        let discharge_factor: f64 = if let Some(r) = customer_row {
-            r.get("fator")
-        } else {
-            let other_row = sqlx::query(
-                "SELECT fator::float8 FROM fatores_descarga WHERE nome = 'OUTROS' LIMIT 1",
+        let discharge_factor = match customer_factor {
+            Some(fator) => fator,
+            None => sqlx::query_scalar!(
+                r#"SELECT fator FROM fatores_descarga WHERE nome = 'OUTROS' LIMIT 1"#
             )
             .fetch_one(pool)
             .await
-            .map_err(|e| e.to_string())?;
-            other_row.get("fator")
+            .map_err(|e| e.to_string())?,
         };
 
-        let mut total_cost = 0.0;
+        let mut total_cost = BigDecimal::zero();
         for v in &order.vehicles {
             let (base, toll) = if v.vehicle_type == VehicleType::Carreta {
-                (frete_base_carreta, pedagio_carreta)
+                (&frete_base_carreta, &pedagio_carreta)
             } else {
-                (frete_base_truck, pedagio_truck)
+                (&frete_base_truck, &pedagio_truck)
             };
 
-            let discharge_cost = base_discharge * discharge_factor;
-            total_cost += (base + toll + discharge_cost + ad_valorem) * f64::from(v.quantity);
+            let discharge_cost = &base_discharge * &discharge_factor;
+            let unit_cost = base + toll + &discharge_cost + &ad_valorem;
+            let qty = BigDecimal::from(v.quantity);
+
+            total_cost += unit_cost * qty;
         }
 
-        let subtotal = total_cost * commercial_margin;
-        let total_tax_rate = (icms + 9.25) / 100.0;
-        let final_value = subtotal / (1.0 - total_tax_rate);
+        let subtotal = &total_cost * &commercial_margin;
 
-        order.total_freight = final_value;
+        let total_tax_rate = (&icms + &pis_cofins_rate) / &one_hundred;
+
+        let divisor = BigDecimal::one() - &total_tax_rate;
+
+        let final_value = subtotal / divisor;
+
+        order.total_freight = final_value.with_scale_round(2, RoundingMode::HalfUp);
         Ok(order)
     }
 }
