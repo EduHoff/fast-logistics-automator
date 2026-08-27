@@ -1,23 +1,21 @@
-version: '3.8'
-
 services:
   backend:
-    build: ./backend
-    container_name: backend
-    env_file:
-      - .env
-    environment:
-      - ROCKET_ADDRESS=0.0.0.0
-      - ROCKET_PORT=8000
-      - DATABASE_URL=${DATABASE_URL}
-      - SECRET_TOKEN_KEY=${SECRET_TOKEN_KEY}
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./backend:/app
-      - /app/target
-    networks:
-      - app-network
+      build:
+        context: ./backend
+        args:
+          - DATABASE_URL=${DATABASE_URL}
+      container_name: backend
+      env_file:
+        - .env
+      environment:
+        - ROCKET_ADDRESS=0.0.0.0
+        - ROCKET_PORT=8000
+        - DATABASE_URL=${DATABASE_URL}
+        - SECRET_TOKEN_KEY=${SECRET_TOKEN_KEY}
+      ports:
+        - "8000:8000"
+      networks:
+        - app-network
 
   frontend:
     build: ./frontend
