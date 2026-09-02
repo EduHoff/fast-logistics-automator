@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { WizardData } from "../types";
-import { uploadOrder } from "@/services/orders";
+import { uploadOrder } from "@/services/scanner";
 import { Button } from "@/components/ui/button";
 
 interface StepUploadOrderProps {

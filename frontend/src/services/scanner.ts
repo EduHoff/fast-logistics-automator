@@ -1,7 +1,7 @@
 import { fetchClient } from "./client";
 import { PurchaseOrder } from "@/types";
 
-export async function uploadOrderFile(file: File): Promise<PurchaseOrder> {
+export async function uploadOrder(file: File): Promise<PurchaseOrder> {
   const formData = new FormData();
   formData.append("file", file, file.name);
 
