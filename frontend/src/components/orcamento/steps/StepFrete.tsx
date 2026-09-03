@@ -78,7 +78,7 @@ export function StepFrete({ data, next, back }: StepFreteProps) {
         <p className="text-base font-semibold">
           Total do Frete Comercial:{" "}
           <span className="text-emerald-600 dark:text-emerald-400 font-bold text-lg">
-            R$ {(updatedOrder.total_freight ?? 0).toFixed(2)}
+            R$ {Number(updatedOrder.total_freight ?? 0).toFixed(2)}
           </span>
         </p>
       </div>

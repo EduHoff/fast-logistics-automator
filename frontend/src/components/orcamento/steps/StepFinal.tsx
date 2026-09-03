@@ -61,7 +61,7 @@ export function StepFinal({ purchaseOrder, back, onSuccess }: StepFinalProps) {
         </p>
         <p>
           <strong className="font-semibold">Frete Final:</strong> R${" "}
-          {(purchaseOrder.total_freight ?? 0).toFixed(2)}
+          {Number(purchaseOrder.total_freight ?? 0).toFixed(2)}
         </p>
       </div>
 
