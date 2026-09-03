@@ -1,8 +1,0 @@
-export enum Category {
-    LSG = "LSG",
-    MOBILIAS = "MOBILIAS",
-    RACK_SLIM = "RACK_SLIM",
-    CHECKOUTS = "CHECKOUTS",
-    PORTA_PALLETS = "PORTA_PALLETS",
-    REFRIGERATED = "REFRIGERATED",
-  }
