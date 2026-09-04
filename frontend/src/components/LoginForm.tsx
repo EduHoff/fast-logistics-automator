@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import { loginUser } from "@/services/auth";
 import { UserRole } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -45,14 +44,8 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm shadow-md">
       <CardHeader className="flex flex-col items-center space-y-2 pb-4">
-        <Image
-          src="/Logo-FAST-Ariam.png"
-          alt="FAST Logo"
-          width={180}
-          height={60}
-          priority
-        />
-        <CardTitle className="text-xl font-bold text-slate-800">FAST Logística</CardTitle>
+        
+      <CardTitle className="text-xl font-bold text-slate-800">Login</CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">

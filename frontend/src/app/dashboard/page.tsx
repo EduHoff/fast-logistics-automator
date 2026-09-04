@@ -14,7 +14,7 @@ export default function DashboardPage() {
         </h1>
 
         <p className="text-muted-foreground">
-          Painel de controle administrativo da FAST Logística.
+          Painel de controle administrativo da Fast Logistics.
         </p>
 
         <div className="pt-4">
