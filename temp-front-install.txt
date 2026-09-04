@@ -8,6 +8,8 @@ npx shadcn@latest add card input table dialog dropdown-menu
 
 npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
+npx shadcn@latest add progress
+
 npm run dev
 
 npm run lint

@@ -7,6 +7,7 @@ import { StepVolumetria } from "./steps/StepVolumetria";
 import { StepFrete } from "./steps/StepFrete";
 import { StepFinal } from "./steps/StepFinal";
 import { WizardData, PurchaseOrder } from "./types";
+import { Progress } from "@/components/ui/progress";
 
 export function WizardComponent() {
   const [step, setStep] = useState<number>(0);
@@ -19,7 +20,7 @@ export function WizardComponent() {
     if (savedOrder) {
       try {
         const richOrder: PurchaseOrder = JSON.parse(savedOrder);
-        const targetStep = savedStep ? parseInt(savedStep, 10) : 1;
+        const targetStep = savedStep ? parseInt(savedStep, 10) : 0;
 
         setTimeout(() => {
           setData({ purchaseOrder: richOrder });
@@ -55,29 +56,48 @@ export function WizardComponent() {
     });
   }
 
-  switch (step) {
-    case 0:
-      return <StepUploadOrder next={next} data={data} />;
-    case 1:
-      return <StepRevisao data={data} next={next} back={back} />;
-    case 2:
-      return <StepVolumetria data={data} next={next} back={back} />;
-    case 3:
-      return <StepFrete data={data} next={next} back={back} />;
-    case 4:
-      return (
-        <StepFinal
-          purchaseOrder={data.purchaseOrder!}
-          back={back}
-          onSuccess={() => {
-            setData({});
-            setStep(0);
-            localStorage.removeItem("purchase_order");
-            localStorage.removeItem("wizard_step");
-          }}
-        />
-      );
-    default:
-      return <div>Fim do Fluxo</div>;
+  const totalSteps = 5;
+  const progressPercentage = ((step + 1) / totalSteps) * 100;
+
+  function renderStepContent() {
+    switch (step) {
+      case 0:
+        return <StepUploadOrder next={next} data={data} />;
+      case 1:
+        return <StepRevisao data={data} next={next} back={back} />;
+      case 2:
+        return <StepVolumetria data={data} next={next} back={back} />;
+      case 3:
+        return <StepFrete data={data} next={next} back={back} />;
+      case 4:
+        return (
+          <StepFinal
+            purchaseOrder={data.purchaseOrder!}
+            back={back}
+            onSuccess={() => {
+              setData({});
+              setStep(0);
+              localStorage.removeItem("purchase_order");
+              localStorage.removeItem("wizard_step");
+            }}
+          />
+        );
+      default:
+        return <div>Fim do Fluxo</div>;
+    }
   }
+
+  return (
+    <div className="space-y-6">
+      <div className="space-y-2">
+        <div className="flex justify-between text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          <span>Progresso do Orçamento</span>
+          <span>{Math.round(progressPercentage)}%</span>
+        </div>
+        <Progress value={progressPercentage} className="h-2 transition-all duration-300" />
+      </div>
+
+      {renderStepContent()}
+    </div>
+  );
 }
