@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FAST Logística",
+  title: "Fast Logistics",
   description: "Sistema de Automação de Orçamentos e Logística",
 };
 

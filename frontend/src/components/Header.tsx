@@ -11,7 +11,7 @@ export function Header() {
       </div>
 
       <Image
-        src="/Logo-FAST-Ariam.png"
+        src="/fast-ariam-logo.png"
         alt="FAST Logo"
         width={180}
         height={60}
