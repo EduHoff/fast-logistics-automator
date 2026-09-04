@@ -1,6 +1,7 @@
 import { Category, UnitType, UserRole, VehicleType } from "./enums";
 
 export interface User {
+  id?: string;
   name: string;
   email: string;
   role: UserRole;

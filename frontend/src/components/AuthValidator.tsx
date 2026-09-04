@@ -34,8 +34,6 @@ export function AuthValidator({ children }: { children: React.ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    // Usamos microtask (queueMicrotask) para adiar a atualização de estado
-    // evitando o alerta de setState síncrono no efeito.
     queueMicrotask(() => {
       const savedUser = localStorage.getItem("user");
       const token = localStorage.getItem("token");
@@ -56,17 +54,33 @@ export function AuthValidator({ children }: { children: React.ReactNode }) {
         return;
       }
 
+      let parsedUser;
+      try {
+        parsedUser = JSON.parse(savedUser);
+      } catch {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        router.push("/login");
+        setIsChecking(false);
+        return;
+      }
+
       if (isPublicRoute) {
-        try {
-          const user = JSON.parse(savedUser);
-          if (user.role === UserRole.ADMIN) {
-            router.push("/dashboard");
-          } else {
-            router.push("/orcamento");
-          }
-        } catch {
-          router.push("/login");
+        if (parsedUser.role === UserRole.ADMIN) {
+          router.push("/dashboard");
+        } else {
+          router.push("/orcamento");
         }
+        setIsChecking(false);
+        return;
+      }
+
+      const isAdminRoute = pathname.startsWith("/dashboard");
+
+      if (isAdminRoute && parsedUser.role !== UserRole.ADMIN) {
+        router.push("/orcamento");
+        setIsChecking(false);
+        return;
       }
 
       setIsChecking(false);

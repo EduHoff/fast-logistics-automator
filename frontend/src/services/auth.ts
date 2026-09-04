@@ -27,6 +27,7 @@ export function logoutUser(): void {
     localStorage.removeItem("token");
     localStorage.removeItem("user");
     localStorage.removeItem("purchase_order");
+    window.location.href = "/login";
   }
 }
 

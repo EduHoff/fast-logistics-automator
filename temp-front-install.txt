@@ -10,6 +10,8 @@ npm install -D @typescript-eslint/parser @typescript-eslint/eslint-plugin
 
 npx shadcn@latest add progress
 
+npx shadcn@latest add sheet
+
 npm run dev
 
 npm run lint

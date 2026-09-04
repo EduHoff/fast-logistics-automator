@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import Image from "next/image";
+import { UserNavDrawer } from "@/components/UserNavDrawer";
 
 export function Header() {
   return (
@@ -18,10 +18,7 @@ export function Header() {
         priority
       />
 
-      <nav className="flex gap-4 text-sm font-medium">
-        <Link href="/dashboard" className="hover:underline">Dashboard</Link>
-        <Link href="/orcamento" className="hover:underline">Novo Orçamento</Link>
-      </nav>
+      <UserNavDrawer />
     </header>
   );
 }
