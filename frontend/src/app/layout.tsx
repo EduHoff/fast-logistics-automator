@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { AuthValidator } from "@/components/AuthValidator";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { Toaster } from "sonner";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -29,6 +30,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-background text-foreground">
         <Header/>
         <AuthValidator>{children}</AuthValidator>
+        <Toaster position="top-right" richColors closeButton />
       </body>
     </html>
   );

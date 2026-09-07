@@ -8,6 +8,7 @@ import { VehicleType } from "@/types/enums";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface StepVolumetriaProps {
   data: WizardData;
@@ -46,7 +47,10 @@ export function StepVolumetria({ data, next, back }: StepVolumetriaProps) {
         setEditableVehicles(response.vehicles || []);
       } catch (error) {
         console.error(error);
-        alert("Erro ao calcular a volumetria e alocação de frota.");
+        toast.error("Erro ao calcular volumetria", {
+          description:
+            "Ocorreu uma falha ao realizar a cubagem e alocação automática de frota.",
+        });
       } finally {
         setLoading(false);
       }
@@ -95,6 +99,63 @@ export function StepVolumetria({ data, next, back }: StepVolumetriaProps) {
 
   function removeVehicle(index: number) {
     setEditableVehicles((prev) => prev.filter((_, i) => i !== index));
+  }
+
+  function handleNext() {
+    if (!updatedOrder) return;
+
+    const totalVolume = updatedOrder.total_volume_m3 ?? 0;
+
+    if (totalVolume <= 0) {
+      toast.error("Volume total inválido", {
+        description:
+          "O volume total do pedido é 0 m³. Verifique os itens do pedido antes de prosseguir.",
+      });
+      return;
+    }
+
+    if (editableVehicles.length === 0) {
+      toast.warning("Nenhum veículo alocado", {
+        description:
+          "Adicione pelo menos um veículo à frota antes de prosseguir.",
+      });
+      return;
+    }
+
+    const hasInvalidCapacity = editableVehicles.some(
+      (v) => !v.capacity_m3 || v.capacity_m3 <= 0
+    );
+
+    if (hasInvalidCapacity) {
+      toast.warning("Capacidade inválida", {
+        description:
+          "Todos os veículos alocados devem possuir uma capacidade maior que 0 m³.",
+      });
+      return;
+    }
+
+    const totalFleetCapacity = editableVehicles.reduce(
+      (acc, v) => acc + v.capacity_m3 * v.quantity,
+      0
+    );
+
+    if (totalFleetCapacity < totalVolume) {
+      const deficit = (totalVolume - totalFleetCapacity).toFixed(2);
+      toast.warning("Capacidade de frota insuficiente", {
+        description: `A capacidade total selecionada (${totalFleetCapacity} m³) é inferior ao volume do pedido (${totalVolume} m³). Faltam ${deficit} m³.`,
+      });
+    } else {
+      toast.success("Volumetria e frota confirmadas!", {
+        description: "Avançando para a etapa de cálculo de frete.",
+      });
+    }
+
+    const updatedPurchaseOrder: PurchaseOrder = {
+      ...updatedOrder,
+      vehicles: editableVehicles,
+    };
+
+    next({ purchaseOrder: updatedPurchaseOrder });
   }
 
   if (loading) {
@@ -270,19 +331,7 @@ export function StepVolumetria({ data, next, back }: StepVolumetriaProps) {
           Voltar
         </Button>
 
-        <Button
-          onClick={() => {
-            if (!updatedOrder) return;
-            const updatedPurchaseOrder: PurchaseOrder = {
-              ...updatedOrder,
-              vehicles: editableVehicles,
-            };
-
-            next({ purchaseOrder: updatedPurchaseOrder });
-          }}
-        >
-          Ir para o Frete
-        </Button>
+        <Button onClick={handleNext}>Ir para o Frete</Button>
       </div>
     </div>
   );

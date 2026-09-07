@@ -7,26 +7,30 @@ import { UserRole } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-    if (!email || !password) {
-      setError("Por favor, preencha o e-mail e a senha.");
+
+    if (!email.trim() || !password.trim()) {
+      toast.warning("Campos obrigatórios não preenchidos", {
+        description: "Por favor, informe seu e-mail e senha para acessar.",
+      });
       return;
     }
 
     try {
       setLoading(true);
-      setError(null);
 
       const response = await loginUser({ email, password });
+
+      toast.success(`Bem-vindo, ${response.user.name || "usuário"}!`);
 
       if (response.user.role === UserRole.ADMIN) {
         router.push("/dashboard");
@@ -35,7 +39,9 @@ export function LoginForm() {
       }
     } catch (err) {
       console.error("Erro no login:", err);
-      setError("E-mail ou senha incorretos.");
+      toast.error("Falha na autenticação", {
+        description: "E-mail ou senha incorretos. Verifique suas credenciais.",
+      });
     } finally {
       setLoading(false);
     }
@@ -44,17 +50,12 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-sm shadow-md">
       <CardHeader className="flex flex-col items-center space-y-2 pb-4">
-        
-      <CardTitle className="text-xl font-bold text-slate-800">Login</CardTitle>
+        <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
+          Login
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form onSubmit={handleLogin} className="space-y-4">
-          {error && (
-            <div className="rounded bg-red-50 p-2 text-center text-xs text-red-600 border border-red-200">
-              {error}
-            </div>
-          )}
-
           <div className="space-y-1">
             <Input
               type="email"

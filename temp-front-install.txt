@@ -12,6 +12,8 @@ npx shadcn@latest add progress
 
 npx shadcn@latest add sheet
 
+npm install sonner
+
 npm run dev
 
 npm run lint

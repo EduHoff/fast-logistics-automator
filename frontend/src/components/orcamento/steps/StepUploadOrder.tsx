@@ -4,6 +4,7 @@ import { useState } from "react";
 import { WizardData } from "../types";
 import { uploadOrder } from "@/services/scanner";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface StepUploadOrderProps {
   data: WizardData;
@@ -25,17 +26,27 @@ export function StepUploadOrder({ next, data }: StepUploadOrderProps) {
     }
 
     if (!file) {
-      alert("Por favor, selecione um arquivo de pedido (PDF ou JSON).");
+      toast.warning("Nenhum arquivo selecionado", {
+        description: "Por favor, selecione um arquivo de pedido (.pdf ou .json).",
+      });
       return;
     }
 
     try {
       setLoading(true);
       const purchaseOrder = await uploadOrder(file);
+
+      toast.success("Arquivo processado com sucesso!", {
+        description: "Os dados do pedido foram extraídos.",
+      });
+
       next({ purchaseOrder });
     } catch (error) {
       console.error(error);
-      alert("Erro ao processar o arquivo do pedido. Verifique a estrutura e tente novamente.");
+
+      toast.error("Erro ao processar o arquivo", {
+        description: "Verifique a estrutura do documento e tente novamente.",
+      });
     } finally {
       setLoading(false);
     }

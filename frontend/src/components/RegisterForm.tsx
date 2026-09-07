@@ -7,6 +7,7 @@ import { UserRole } from "@/types";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -16,25 +17,32 @@ export default function RegisterPage() {
   const [password, setPassword] = useState("");
   const [role, setRole] = useState<UserRole>(UserRole.OPERATOR);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!name || !email || !password) {
-      setError("Por favor, preencha todos os campos obrigatórios.");
+    if (!name.trim() || !email.trim() || !password.trim()) {
+      toast.warning("Campos obrigatórios não preenchidos", {
+        description: "Por favor, preencha nome, e-mail e senha para continuar.",
+      });
       return;
     }
 
     try {
       setLoading(true);
-      setError(null);
 
       await registerUser({ name, email, password, role });
+      
+      toast.success("Conta criada com sucesso!", {
+        description: "Faça login com suas credenciais para acessar o sistema.",
+      });
+
       router.push("/login");
     } catch (err) {
       console.error("Erro no cadastro:", err);
-      setError("Erro ao cadastrar a conta. Tente novamente.");
+      toast.error("Erro ao cadastrar a conta", {
+        description: "Verifique os dados informados ou tente novamente mais tarde.",
+      });
     } finally {
       setLoading(false);
     }
@@ -44,18 +52,12 @@ export default function RegisterPage() {
     <div className="flex min-h-[80vh] items-center justify-center p-4">
       <Card className="w-full max-w-sm shadow-md">
         <CardHeader className="flex flex-col items-center space-y-2 pb-4">
-          <CardTitle className="text-xl font-bold text-slate-800">
+          <CardTitle className="text-xl font-bold text-slate-800 dark:text-slate-100">
             Criar Conta
           </CardTitle>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleRegister} className="space-y-4">
-            {error && (
-              <div className="rounded bg-red-50 p-2 text-center text-xs text-red-600 border border-red-200">
-                {error}
-              </div>
-            )}
-
             <div className="space-y-1">
               <Input
                 type="text"

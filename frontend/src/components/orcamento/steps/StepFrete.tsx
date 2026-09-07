@@ -5,6 +5,7 @@ import { WizardData } from "../types";
 import { quoteOrderFreight } from "@/services/orders";
 import { PurchaseOrder } from "@/types";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface StepFreteProps {
   data: WizardData;
@@ -23,14 +24,29 @@ export function StepFrete({ data, next, back }: StepFreteProps) {
       try {
         const response = await quoteOrderFreight(data.purchaseOrder);
         setUpdatedOrder(response);
+        toast.success("Frete calculado com sucesso!");
       } catch (err) {
         console.error(err);
-        setError("Não foi possível calcular o frete para este destino.");
+        const errorMessage =
+          "Não foi possível calcular o frete para este destino.";
+        setError(errorMessage);
+        toast.error("Erro ao calcular o frete", {
+          description: errorMessage,
+        });
       }
     }
 
     fetchQuote();
   }, [data.purchaseOrder]);
+
+  function handleNext() {
+    if (!updatedOrder) {
+      toast.warning("Aguarde a conclusão do cálculo do frete.");
+      return;
+    }
+
+    next({ purchaseOrder: updatedOrder });
+  }
 
   if (error) {
     return (
@@ -85,7 +101,7 @@ export function StepFrete({ data, next, back }: StepFreteProps) {
           Voltar
         </Button>
 
-        <Button onClick={() => next({ purchaseOrder: updatedOrder })}>
+        <Button onClick={handleNext}>
           Avançar para o Resumo
         </Button>
       </div>

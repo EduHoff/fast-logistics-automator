@@ -15,6 +15,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Trash2, Plus } from "lucide-react";
+import { toast } from "sonner";
 
 interface StepRevisaoProps {
   data: WizardData;
@@ -82,6 +83,52 @@ export function StepRevisao({ data, next, back }: StepRevisaoProps) {
       ...order,
       items: order.items.filter((_, i) => i !== index),
     });
+  }
+
+  function handleNext() {
+    if (!order) return;
+
+    if (
+      !order.order_number?.trim() ||
+      !order.customer_name?.trim() ||
+      !order.city?.trim() ||
+      !order.uf?.trim()
+    ) {
+      toast.warning("Dados do cabeçalho incompletos", {
+        description:
+          "Preencha o Nº do Pedido, Cliente, Cidade e UF antes de prosseguir.",
+      });
+      return;
+    }
+
+    if (!order.items || order.items.length === 0) {
+      toast.warning("Nenhum item informado", {
+        description: "O pedido precisa ter pelo menos um item cadastrado.",
+      });
+      return;
+    }
+
+    const hasInvalidItem = order.items.some(
+      (item) =>
+        !item.code?.trim() ||
+        !item.description?.trim() ||
+        !item.quantity ||
+        item.quantity <= 0
+    );
+
+    if (hasInvalidItem) {
+      toast.warning("Itens incompletos ou inválidos", {
+        description:
+          "Certifique-se de que todos os itens tenham código, descrição e quantidade maior que zero.",
+      });
+      return;
+    }
+
+    toast.success("Revisão de itens concluída!", {
+      description: "Avançando para o cálculo de volumetria.",
+    });
+
+    next({ purchaseOrder: order });
   }
 
   if (!order) {
@@ -291,15 +338,7 @@ export function StepRevisao({ data, next, back }: StepRevisaoProps) {
         <Button variant="outline" onClick={back}>
           Voltar
         </Button>
-        <Button
-          onClick={() => {
-            if (order) {
-              next({ purchaseOrder: order });
-            }
-          }}
-        >
-          Próximo
-        </Button>
+        <Button onClick={handleNext}>Próximo</Button>
       </div>
     </div>
   );
