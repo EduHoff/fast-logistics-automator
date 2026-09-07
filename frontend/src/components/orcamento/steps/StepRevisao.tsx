@@ -23,9 +23,6 @@ export function StepRevisao({ data, next, back }: StepRevisaoProps) {
   return (
     <div className="space-y-6">
       <div>
-        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-          Etapa 2 de 5
-        </span>
         <h2 className="text-xl font-bold tracking-tight text-foreground">
           Revisão dos Itens
         </h2>
