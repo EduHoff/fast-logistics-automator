@@ -9,7 +9,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
-import { Menu, LogOut, User as UserIcon } from "lucide-react";
+import { Menu, LogOut, User as UserIcon, LayoutDashboard, FilePlus } from "lucide-react";
 import Link from "next/link";
 import { User as UserType, UserRole } from "@/types";
 import { logoutUser } from "@/services/auth";
@@ -79,15 +79,17 @@ export function UserNavDrawer() {
             {user?.role === UserRole.ADMIN && (
               <Link
                 href="/dashboard"
-                className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors"
+                className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors"
               >
+                <LayoutDashboard className="h-4 w-4 text-muted-foreground" />
                 Dashboard
               </Link>
             )}
             <Link
               href="/orcamento"
-              className="px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors"
+              className="flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent transition-colors"
             >
+              <FilePlus className="h-4 w-4 text-muted-foreground" />
               Novo Orçamento
             </Link>
           </nav>
