@@ -13,6 +13,7 @@ import { Menu, LogOut, User as UserIcon, LayoutDashboard, FilePlus } from "lucid
 import Link from "next/link";
 import { User as UserType, UserRole } from "@/types";
 import { logoutUser } from "@/services/auth";
+import { ThemeToggle } from "@/components/ThemeToggle";
 
 export function UserNavDrawer() {
   const [user, setUser] = useState<UserType | null>(() => {
@@ -95,13 +96,16 @@ export function UserNavDrawer() {
           </nav>
         </div>
 
-        <div className="border-t pt-4">
+        <div className="border-t pt-4 space-y-4">
+          <ThemeToggle />
+        
           <Button
             variant="destructive"
-            className="w-full flex items-center justify-center gap-2"
+            size="sm"
+            className="w-3/4 mx-auto flex items-center justify-center gap-2 text-xs"
             onClick={logoutUser}
           >
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-3.5 w-3.5" />
             Sair da Conta
           </Button>
         </div>
