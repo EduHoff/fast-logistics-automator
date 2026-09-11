@@ -21,20 +21,32 @@ impl OrderRepository {
         let uf_str = order.uf.to_string();
         let status = "confirmado";
 
+        let cidade_id: Uuid = query_scalar!(
+            r#"
+            SELECT id
+            FROM cidades
+            WHERE LOWER(nome) = LOWER($1) AND UPPER(uf) = UPPER($2)
+            "#,
+            order.city,
+            uf_str
+        )
+        .fetch_optional(&mut *tx)
+        .await?
+        .ok_or_else(|| sqlx::Error::RowNotFound)?;
+
         let order_id = query_scalar!(
             r#"
             INSERT INTO pedidos (
-                usuario_id, numero_oc, cliente_nome, cidade_nome, uf,
+                usuario_id, cidade_id, numero_oc, cliente_nome,
                 total_volume_m3, total_freite_calculado, status
             )
-            VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            VALUES ($1, $2, $3, $4, $5, $6, $7)
             RETURNING id
             "#,
             created_by_uuid,
+            cidade_id,
             order.order_number,
             order.customer_name,
-            order.city,
-            uf_str,
             order.total_volume_m3,
             order.total_freight,
             status
@@ -51,9 +63,9 @@ impl OrderRepository {
                 r#"
                 INSERT INTO pedido_itens (
                     pedido_id, codigo_produto, descricao, quantidade,
-                    unidade, categoria, itens_por_m3, comprimento, largura, altura
+                    unidade, categoria
                 )
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 "#,
                 order_id,
                 item.code,
@@ -61,10 +73,6 @@ impl OrderRepository {
                 quantity,
                 unit_str,
                 category_str,
-                item.items_per_m3,
-                item.length,
-                item.width,
-                item.height
             )
             .execute(&mut *tx)
             .await?;
