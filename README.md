@@ -47,4 +47,5 @@ cargo add jsonwebtoken --features rust_crypto
 cargo add sqlx --features runtime-tokio,postgres,chrono,uuid,bigdecimal
 cargo add tokio --features macros,rt-multi-thread
 cargo add uuid --features v4,serde
+cargo add reqwest --features json
 ```

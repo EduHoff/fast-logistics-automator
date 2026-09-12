@@ -1,4 +1,4 @@
-FROM rust:1-slim AS builder
+FROM rust:slim-bookworm AS builder
 
 RUN apt-get update && apt-get install -y \
     pkg-config \
@@ -26,7 +26,6 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /app
 
 COPY --from=builder /app/target/release/backend /app/backend-bin
-
 COPY Rocket.toml ./
 
 EXPOSE 8000

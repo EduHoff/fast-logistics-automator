@@ -2,6 +2,8 @@ use crate::domain::entities::purchase_order::PurchaseOrder;
 use crate::domain::enums::category::Category;
 use crate::domain::enums::unit_type::UnitType;
 use crate::domain::enums::vehicle_type::VehicleType;
+use crate::infra::external::city_api_client::CityApiClient;
+use crate::infra::repositories::city_repository::{CityRecord, CityRepository};
 use crate::infra::repositories::product_repository::ProductRepository;
 use bigdecimal::{BigDecimal, One, RoundingMode, Zero};
 use sqlx::PgPool;
@@ -10,12 +12,16 @@ use std::str::FromStr;
 
 pub struct LogisticsService {
     product_repo: ProductRepository,
+    city_repo: CityRepository,
+    city_api: CityApiClient,
 }
 
 impl LogisticsService {
-    pub const fn new(pool: PgPool) -> Self {
+    pub fn new(pool: PgPool) -> Self {
         Self {
-            product_repo: ProductRepository::new(pool),
+            product_repo: ProductRepository::new(pool.clone()),
+            city_repo: CityRepository::new(pool.clone()),
+            city_api: CityApiClient::new(pool),
         }
     }
 
@@ -101,33 +107,41 @@ impl LogisticsService {
         pool: &PgPool,
         mut order: PurchaseOrder,
     ) -> Result<PurchaseOrder, String> {
-        let city_row = sqlx::query!(
-            r#"
-            SELECT 
-                frete_base_carreta AS "frete_base_carreta!",
-                pedagio_carreta AS "pedagio_carreta!",
-                frete_base_truck AS "frete_base_truck!",
-                pedagio_truck AS "pedagio_truck!"
-            FROM cidades 
-            WHERE nome ILIKE $1 
-            LIMIT 1
-            "#,
-            order.city.trim()
-        )
-        .fetch_optional(pool)
-        .await
-        .map_err(|e| e.to_string())?
-        .ok_or_else(|| {
-            format!(
-                "A cidade '{}' não está cadastrada na tabela de fretes base.",
-                order.city
-            )
-        })?;
+        let city_row: CityRecord = if let Some(city) = self
+            .city_repo
+            .find_by_name_and_uf(&order.city, order.uf)
+            .await?
+        {
+            city
+        } else {
+            let external_data = self
+                .city_api
+                .fetch_city(&order.city, order.uf)
+                .await?
+                .ok_or_else(|| {
+                    format!(
+                        "The city '{} - {}' is not registered and was not found in the external API.",
+                        order.city, order.uf
+                    )
+                })?;
 
-        let frete_base_carreta = city_row.frete_base_carreta;
-        let pedagio_carreta = city_row.pedagio_carreta;
-        let frete_base_truck = city_row.frete_base_truck;
-        let pedagio_truck = city_row.pedagio_truck;
+            self.city_repo
+                .insert(
+                    external_data.uf,
+                    &external_data.nome,
+                    external_data.distancia_km,
+                    &external_data.frete_base_truck,
+                    &external_data.pedagio_truck,
+                    &external_data.frete_base_carreta,
+                    &external_data.pedagio_carreta,
+                )
+                .await?
+        };
+
+        let frete_base_carreta = city_row.frete_base_carreta.unwrap_or_default();
+        let pedagio_carreta = city_row.pedagio_carreta.unwrap_or_default();
+        let frete_base_truck = city_row.frete_base_truck.unwrap_or_default();
+        let pedagio_truck = city_row.pedagio_truck.unwrap_or_default();
 
         let base_discharge = BigDecimal::from(250);
         let ad_valorem = BigDecimal::zero();

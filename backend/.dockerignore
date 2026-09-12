@@ -1,5 +1,14 @@
+# Rust Build Output
 target/
-.env
+
+# Git & IDEs
 .git
 .gitignore
+.vscode
+.idea
+
+# Environment
+.env
+
+# Docker file itself
 Dockerfile
