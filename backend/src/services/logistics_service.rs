@@ -198,7 +198,7 @@ impl LogisticsService {
 
             let tariff = tariffs
                 .iter()
-                .find(|t| t.tipo_veiculo.to_uppercase() == vehicle_str)
+                .find(|t| t.tipo_veiculo.to_uppercase() == vehicle_str.to_uppercase())
                 .ok_or_else(|| {
                     format!(
                         "Tariff not found for vehicle type '{}' in city '{}'",
