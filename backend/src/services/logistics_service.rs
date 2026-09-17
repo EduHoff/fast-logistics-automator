@@ -125,23 +125,30 @@ impl LogisticsService {
                     )
                 })?;
 
-            self.city_repo
+            let new_city = self
+                .city_repo
                 .insert(
                     external_data.uf,
                     &external_data.nome,
                     external_data.distancia_km,
-                    &external_data.frete_base_truck,
-                    &external_data.pedagio_truck,
-                    &external_data.frete_base_carreta,
-                    &external_data.pedagio_carreta,
                 )
-                .await?
+                .await?;
+
+            for tarifa in external_data.tarifas {
+                self.city_repo
+                    .insert_tariff(
+                        new_city.id,
+                        &tarifa.tipo_veiculo,
+                        &tarifa.frete_base,
+                        &tarifa.pedagio,
+                    )
+                    .await?;
+            }
+
+            new_city
         };
 
-        let frete_base_carreta = city_row.frete_base_carreta.unwrap_or_default();
-        let pedagio_carreta = city_row.pedagio_carreta.unwrap_or_default();
-        let frete_base_truck = city_row.frete_base_truck.unwrap_or_default();
-        let pedagio_truck = city_row.pedagio_truck.unwrap_or_default();
+        let tariffs = self.city_repo.find_tariffs_by_city_id(city_row.id).await?;
 
         let base_discharge = BigDecimal::from(250);
         let ad_valorem = BigDecimal::zero();
@@ -182,26 +189,36 @@ impl LogisticsService {
         };
 
         let mut total_cost = BigDecimal::zero();
+
         for v in &order.vehicles {
-            let (base, toll) = if v.vehicle_type == VehicleType::Carreta {
-                (&frete_base_carreta, &pedagio_carreta)
-            } else {
-                (&frete_base_truck, &pedagio_truck)
+            let vehicle_str = match v.vehicle_type {
+                VehicleType::Carreta => "carreta",
+                VehicleType::Truck => "truck",
             };
 
+            let tariff = tariffs
+                .iter()
+                .find(|t| t.tipo_veiculo.to_uppercase() == vehicle_str)
+                .ok_or_else(|| {
+                    format!(
+                        "Tariff not found for vehicle type '{}' in city '{}'",
+                        vehicle_str, city_row.nome
+                    )
+                })?;
+
+            let base = tariff.frete_base.clone().unwrap_or_default();
+            let toll = tariff.pedagio.clone().unwrap_or_default();
+
             let discharge_cost = &base_discharge * &discharge_factor;
-            let unit_cost = base + toll + &discharge_cost + &ad_valorem;
+            let unit_cost = &base + &toll + &discharge_cost + &ad_valorem;
             let qty = BigDecimal::from(v.quantity);
 
             total_cost += unit_cost * qty;
         }
 
         let subtotal = &total_cost * &commercial_margin;
-
         let total_tax_rate = (&icms + &pis_cofins_rate) / &one_hundred;
-
         let divisor = BigDecimal::one() - &total_tax_rate;
-
         let final_value = subtotal / divisor;
 
         order.total_freight = final_value.with_scale_round(2, RoundingMode::HalfUp);

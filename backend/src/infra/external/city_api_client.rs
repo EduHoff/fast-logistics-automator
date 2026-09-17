@@ -4,14 +4,18 @@ use serde::Deserialize;
 use sqlx::PgPool;
 
 #[derive(Debug, Clone, Deserialize)]
+pub struct ExternalCityTariffData {
+    pub tipo_veiculo: String,
+    pub frete_base: BigDecimal,
+    pub pedagio: BigDecimal,
+}
+
+#[derive(Debug, Clone, Deserialize)]
 pub struct ExternalCityData {
     pub uf: Uf,
     pub nome: String,
     pub distancia_km: i32,
-    pub frete_base_truck: BigDecimal,
-    pub pedagio_truck: BigDecimal,
-    pub frete_base_carreta: BigDecimal,
-    pub pedagio_carreta: BigDecimal,
+    pub tarifas: Vec<ExternalCityTariffData>,
 }
 
 #[derive(sqlx::FromRow)]
@@ -64,42 +68,34 @@ impl CityApiClient {
             return Ok(None);
         };
 
-        let tarifas = sqlx::query_as::<_, TarifaVeiculoModel>(
+        let tarifas_cadastradas = sqlx::query_as::<_, TarifaVeiculoModel>(
             "SELECT tipo_veiculo, taxa_km, pedagio_km FROM public.tarifas_veiculo",
         )
         .fetch_all(&self.db_pool)
         .await
         .map_err(|e| format!("Failed to fetch vehicle rates from database: {e}"))?;
 
-        let truck_tarifa = tarifas
-            .iter()
-            .find(|t| t.tipo_veiculo == "truck")
-            .ok_or_else(|| {
-                "Rate for 'truck' not found in tarifas_veiculo table".to_string()
-            })?;
-
-        let carreta_tarifa = tarifas
-            .iter()
-            .find(|t| t.tipo_veiculo == "carreta")
-            .ok_or_else(|| {
-                "Rate for 'carreta' not found in tarifas_veiculo table".to_string()
-            })?;
-
         let dist_bd = BigDecimal::from(distancia_km);
 
-        let frete_base_truck = &dist_bd * &truck_tarifa.taxa_km;
-        let pedagio_truck = &dist_bd * &truck_tarifa.pedagio_km;
-        let frete_base_carreta = &dist_bd * &carreta_tarifa.taxa_km;
-        let pedagio_carreta = &dist_bd * &carreta_tarifa.pedagio_km;
+        let tarifas_calculadas = tarifas_cadastradas
+            .into_iter()
+            .map(|t| {
+                let frete_base = &dist_bd * &t.taxa_km;
+                let pedagio = &dist_bd * &t.pedagio_km;
+
+                ExternalCityTariffData {
+                    tipo_veiculo: t.tipo_veiculo.to_lowercase(),
+                    frete_base,
+                    pedagio,
+                }
+            })
+            .collect();
 
         Ok(Some(ExternalCityData {
             uf,
             nome: city_name.to_uppercase(),
             distancia_km,
-            frete_base_truck,
-            pedagio_truck,
-            frete_base_carreta,
-            pedagio_carreta,
+            tarifas: tarifas_calculadas,
         }))
     }
 

@@ -10,10 +10,14 @@ pub struct CityRecord {
     pub uf: Uf,
     pub nome: String,
     pub distancia_km: i32,
-    pub frete_base_truck: Option<BigDecimal>,
-    pub pedagio_truck: Option<BigDecimal>,
-    pub frete_base_carreta: Option<BigDecimal>,
-    pub pedagio_carreta: Option<BigDecimal>,
+}
+
+#[derive(Debug, Clone)]
+pub struct CityTariffRecord {
+    pub cidade_id: Uuid,
+    pub tipo_veiculo: String,
+    pub frete_base: Option<BigDecimal>,
+    pub pedagio: Option<BigDecimal>,
 }
 
 pub struct CityRepository {
@@ -34,15 +38,7 @@ impl CityRepository {
 
         let row = sqlx::query!(
             r#"
-            SELECT
-                id,
-                uf,
-                nome,
-                distancia_km,
-                frete_base_truck,
-                pedagio_truck,
-                frete_base_carreta,
-                pedagio_carreta
+            SELECT id, uf, nome, distancia_km
             FROM cidades
             WHERE LOWER(nome) = LOWER($1) AND UPPER(uf) = UPPER($2)
             LIMIT 1
@@ -64,14 +60,37 @@ impl CityRepository {
                     uf: parsed_uf,
                     nome: r.nome,
                     distancia_km: r.distancia_km,
-                    frete_base_truck: r.frete_base_truck,
-                    pedagio_truck: r.pedagio_truck,
-                    frete_base_carreta: r.frete_base_carreta,
-                    pedagio_carreta: r.pedagio_carreta,
                 }))
             }
             None => Ok(None),
         }
+    }
+
+    pub async fn find_tariffs_by_city_id(
+        &self,
+        cidade_id: Uuid,
+    ) -> Result<Vec<CityTariffRecord>, String> {
+        let rows = sqlx::query!(
+            r#"
+            SELECT cidade_id, tipo_veiculo, frete_base, pedagio
+            FROM cidade_tarifas
+            WHERE cidade_id = $1
+            "#,
+            cidade_id
+        )
+        .fetch_all(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        Ok(rows
+            .into_iter()
+            .map(|r| CityTariffRecord {
+                cidade_id: r.cidade_id,
+                tipo_veiculo: r.tipo_veiculo,
+                frete_base: r.frete_base,
+                pedagio: r.pedagio,
+            })
+            .collect())
     }
 
     pub async fn insert(
@@ -79,33 +98,18 @@ impl CityRepository {
         uf: Uf,
         nome: &str,
         distancia_km: i32,
-        frete_base_truck: &BigDecimal,
-        pedagio_truck: &BigDecimal,
-        frete_base_carreta: &BigDecimal,
-        pedagio_carreta: &BigDecimal,
     ) -> Result<CityRecord, String> {
         let uf_str = uf.to_string();
 
         let row = sqlx::query!(
             r#"
-            INSERT INTO cidades (
-                uf, nome, distancia_km,
-                frete_base_truck, pedagio_truck,
-                frete_base_carreta, pedagio_carreta
-            )
-            VALUES ($1, $2, $3, $4, $5, $6, $7)
-            RETURNING
-                id, uf, nome, distancia_km,
-                frete_base_truck, pedagio_truck,
-                frete_base_carreta, pedagio_carreta
+            INSERT INTO cidades (uf, nome, distancia_km)
+            VALUES ($1, $2, $3)
+            RETURNING id, uf, nome, distancia_km
             "#,
             uf_str,
             nome,
-            distancia_km,
-            frete_base_truck,
-            pedagio_truck,
-            frete_base_carreta,
-            pedagio_carreta
+            distancia_km
         )
         .fetch_one(&self.pool)
         .await
@@ -119,10 +123,36 @@ impl CityRepository {
             uf: parsed_uf,
             nome: row.nome,
             distancia_km: row.distancia_km,
-            frete_base_truck: row.frete_base_truck,
-            pedagio_truck: row.pedagio_truck,
-            frete_base_carreta: row.frete_base_carreta,
-            pedagio_carreta: row.pedagio_carreta,
+        })
+    }
+
+    pub async fn insert_tariff(
+        &self,
+        cidade_id: Uuid,
+        tipo_veiculo: &str,
+        frete_base: &BigDecimal,
+        pedagio: &BigDecimal,
+    ) -> Result<CityTariffRecord, String> {
+        let row = sqlx::query!(
+            r#"
+            INSERT INTO cidade_tarifas (cidade_id, tipo_veiculo, frete_base, pedagio)
+            VALUES ($1, $2, $3, $4)
+            RETURNING cidade_id, tipo_veiculo, frete_base, pedagio
+            "#,
+            cidade_id,
+            tipo_veiculo,
+            frete_base,
+            pedagio
+        )
+        .fetch_one(&self.pool)
+        .await
+        .map_err(|e| e.to_string())?;
+
+        Ok(CityTariffRecord {
+            cidade_id: row.cidade_id,
+            tipo_veiculo: row.tipo_veiculo,
+            frete_base: row.frete_base,
+            pedagio: row.pedagio,
         })
     }
 }
